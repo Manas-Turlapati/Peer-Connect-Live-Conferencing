@@ -1,0 +1,80 @@
+.loginPageWrapper {
+    height: 100vh;
+    width: 100vw;
+    background: url(../../public/pexels-steve-29101877.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .loginCard {
+    width: 420px;
+    max-width: 90%;
+    border-radius: 16px;
+    background-color: rgba(30, 30, 45, 0.75);
+    backdrop-filter: blur(8px);
+    padding: 32px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  
+  .loginTitle {
+    text-align: center;
+    padding-bottom: 24px;
+    color: white;
+    font-size: 1.6rem;
+  }
+  
+  .loginLabel {
+    display: block;
+    color: white;
+    margin-bottom: 6px;
+    margin-top: 14px;
+    font-size: 0.9rem;
+  }
+  
+  .loginInput {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: 0.95rem;
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .loginInput:focus {
+    box-shadow: 0 0 0 2px #ff4d4d;
+  }
+  
+  .loginBtnWrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 24px;
+  }
+  
+  .loginSubmitBtn {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 32px;
+    background-color: #e63946;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 3rem;
+  }
+  
+  .loginSubmitBtn:hover {
+    background-color: #d62839;
+    box-shadow: 2px 4px 12px rgba(230, 57, 70, 0.6);
+    transform: translateY(-2px);
+  }
+  .RegisterLink{
+    color: orange;
+    text-decoration: underline;
+  }

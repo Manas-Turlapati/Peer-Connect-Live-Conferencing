@@ -1,0 +1,62 @@
+.landing-container{
+  width:100vw;
+  height:100vh;
+  background:url("/public/background.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+nav .landing-nav-title h2{
+  color: white;
+}
+nav{
+  padding: 3rem;
+  display: flex;
+  justify-content: space-between;
+}
+nav .landing-nav-links a{
+  color: white;
+  text-decoration: white;
+}
+nav .landing-nav-links button{
+  padding: 12px;
+  width:7rem;
+  background-color: orange;
+  color:white;
+  border-radius: 1rem;
+
+}
+nav .landing-nav-links a,button{
+  margin-left:2rem;
+}
+.landing-main-container{
+  display: flex;
+  justify-content: space-evenly;
+}
+.landing-main-container .landing-image img{
+  height: 30rem;
+  width:30rem;
+}
+.landing-main-container .landing-sub-container h1,button{
+  color:white;
+  margin-top: 2rem;
+}
+.landing-main-container .landing-sub-container h1{
+  font-size: 4rem;
+}
+.landing-main-container .landing-sub-container p{
+  color:grey;
+  margin-top:2rem;
+  font-size: 2rem;
+}
+span{
+  color:orange
+}
+.landing-main-container .landing-sub-container button{
+  padding:12px;
+  background-color: orange;
+  border-radius: 12px;
+  cursor:pointer;
+  height: 4rem;
+  width:7rem;
+  font-size: 17px;
+}

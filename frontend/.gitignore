@@ -1,0 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Block any .env file anywhere in this directory tree
+.env
+.env.*
+# Block any node_modules folder anywhere in this directory tree
+node_modules/
+**/node_modules/
+.history/
+.env
+*history*
+*.history
+history.log

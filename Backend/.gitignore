@@ -1,0 +1,11 @@
+# Block any .env file anywhere in this directory tree
+.env
+.env.*
+# Block any node_modules folder anywhere in this directory tree
+node_modules/
+**/node_modules/
+.history/
+.env
+*history*
+*.history
+history.log
