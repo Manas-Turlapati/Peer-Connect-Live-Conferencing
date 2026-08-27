@@ -131,6 +131,11 @@ io.on("connection", (socket) => {
         }
       })
     })
+    socket.on("icecandidate",(toUserId,data)=>{
+      if(data.candidate&&data){
+        io.to(toUserId).emit("icecandidate",data,socket.id);
+      }
+    })
     socket.on("disconnect",()=>{
       console.log("disconnected from the server");
       var key;

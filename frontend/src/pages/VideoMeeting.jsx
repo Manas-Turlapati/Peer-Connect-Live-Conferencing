@@ -52,26 +52,6 @@ function VideoMeeting(){
     // }connect
     let videoStream = null;
     let audioStream = null;
-    
-    
-    //step1 is to get the iceservers from anywhere
-    async function fetchData() {
-      let res = await fetch("http://localhost:3000/turn");
-      let val = await res.json();
-      //step1
-      let peerConfigConnections = {
-        iceServers: val.data,
-      };
-      console.log(peerConfigConnections);
-      //step2 is to save these iceservers such that u are telling the browser to store these servers because they will be used in future
-
-      const peerConnection = new RTCPeerConnection(peerConfigConnections);
-      console.log(peerConnection);
-    }
-    fetchData();
-    // const peerConnection = RTCPeerConnection(peerConfigConnections);
-  
-
     let getUserMedia = ()=>{
       if((audioPermission&&audio)||(video&&videoPermission)){
         navigator.mediaDevices.getUserMedia({ video: video, audio: audio })
@@ -104,10 +84,84 @@ function VideoMeeting(){
       socketRef.current = io(server_url);
       socketRef.current.on("connect", () => {
         console.log(`${socketRef.current.id} is connected with the frontend successfully`);
+        socketRef.current.on("user-joined",async (toUserId) => {
+          let res = await fetch("http://localhost:3000/turn");
+          let val = await res.json();
+          //creating the rtc peer connection on the both sides
+          //i)configuring the rtcpeerconncetion
+          let peerConfigConnections = {
+            iceServers: val.data,
+          };
+          //ii)establishing the rtcPeerConnections between the peers
+          const rtcpeerConnection = new RTCPeerConnection(
+            peerConfigConnections,
+          );
+          //iii)store in connections with key as the remote peer's id and object as the rtcpc object because u want to know which config u have used to connect with them
+          //so first of all peer1 does peer2id:rtcpcobject of peer1 and peer2 does is peer1id:rtcpc object of peer2
+          connections[toUserId] = rtcpeerConnection;
+          //connections[toUserId] contains ur rtcPeerConfiguartion only
+          //iv)adding the tracks to the rtcPeerConnections
+          const userArray = window.localStream.getTracks();
+          userArray.forEach((el) => {
+            connections[toUserId].addTrack(el, window.localStream);
+          });
+          //listening on the ice servers
+          connections[toUserId].onicecandidate = (event)=>{
+            if(event.candidate){
+              socketRef.current.emit("icecandidate",toUserId,{
+                type:"ice-candidate",
+                candidate:event.candidate
+              })
+            }
+          }
+          
+          //making the sdp session descrption protocol negotiation which means sending an offer and receiving the answer
+          //i)creating the offer and setting the local description means telling the packet that its offer not answer
+          const offer = await connections[toUserId].createOffer();
+          await connections[toUserId].setLocalDescription(offer);
+          //ii)sending the offer to the other peer via signalling server which is ur socketRef.current is the signalling server
+          //from the other server side the client sends the answer so we can confirm that the sdp negotiation is established
+          socketRef.current.emit(
+            "signal",
+            toUserId,
+            JSON.stringify({ sdp: connections[toUserId].localDescription }),
+          );
+        });
+        socketRef.current.on("signal", async (fromUserId, data) => {
+          try {
+            //fromuserID means peer2's id which while sending we have established the connections which means connections[fromUserId] is nothing but peer1 current rtcpc
+            const pc = connections[fromUserId];
+            const signalData = JSON.parse(data);
+            await pc.setRemoteDescription(signalData.sdp);
+            if(signalData.sdp.type === "offer") {
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+              socketRef.current.emit(
+                "signal",
+                fromUserId,
+                JSON.stringify({ sdp: pc.localDescription }),
+              );
+            }
+            else if(signalData.sdp.type === "answer") {
+              console.log("SDP negotiation completed");
+            }
+          }catch (err) {
+            console.log(err);
+          }
+        });
+        socketRef.current.on("icecandidate", async (data, fromUserId) => {
+          try {
+            if (data && data.candidate) {
+              await connections[fromUserId].addIceCandidate(data.candidate);
+            }
+          } catch (err) {
+            console.log(err);
+          }
+        });
         socketRef.current.emit("join-call",roomId);
-        socketRef.current.emit("signal",socketRef.current.id,"signal has been sent successfully");
         socketRef.current.emit("chat-message","Hi!Everyone I am Manas",askForUsername?username:"");
       });
+
     }
     let getPermission = async function(){
       try{
