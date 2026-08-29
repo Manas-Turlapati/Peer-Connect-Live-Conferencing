@@ -84,7 +84,7 @@ function VideoMeeting(){
       socketRef.current = io(server_url);
       socketRef.current.on("connect", () => {
         console.log(`${socketRef.current.id} is connected with the frontend successfully`);
-        socketRef.current.on("user-joined",async (toUserId) => {
+        socketRef.current.on("user-joined",async (remotePeerId) => {
           let res = await fetch("http://localhost:3000/turn");
           let val = await res.json();
           //creating the rtc peer connection on the both sides
@@ -98,17 +98,17 @@ function VideoMeeting(){
           );
           //iii)store in connections with key as the remote peer's id and object as the rtcpc object because u want to know which config u have used to connect with them
           //so first of all peer1 does peer2id:rtcpcobject of peer1 and peer2 does is peer1id:rtcpc object of peer2
-          connections[toUserId] = rtcpeerConnection;
+          connections[remotePeerId] = rtcpeerConnection;
           //connections[toUserId] contains ur rtcPeerConfiguartion only
           //iv)adding the tracks to the rtcPeerConnections
           const userArray = window.localStream.getTracks();
           userArray.forEach((el) => {
-            connections[toUserId].addTrack(el, window.localStream);
+            connections[remotePeerId].addTrack(el, window.localStream);
           });
           //listening on the ice servers
-          connections[toUserId].onicecandidate = (event)=>{
+          connections[remotePeerId].onicecandidate = (event)=>{
             if(event.candidate){
-              socketRef.current.emit("icecandidate",toUserId,{
+              socketRef.current.emit("icecandidate",remotePeerId,{
                 type:"ice-candidate",
                 candidate:event.candidate
               })
@@ -117,17 +117,19 @@ function VideoMeeting(){
           
           //making the sdp session descrption protocol negotiation which means sending an offer and receiving the answer
           //i)creating the offer and setting the local description means telling the packet that its offer not answer
-          const offer = await connections[toUserId].createOffer();
-          await connections[toUserId].setLocalDescription(offer);
+          const offer = await connections[remotePeerId].createOffer();
+          await connections[remotePeerId].setLocalDescription(offer);
           //ii)sending the offer to the other peer via signalling server which is ur socketRef.current is the signalling server
           //from the other server side the client sends the answer so we can confirm that the sdp negotiation is established
           socketRef.current.emit(
             "signal",
-            toUserId,
-            JSON.stringify({ sdp: connections[toUserId].localDescription }),
+            remotePeerId,
+            JSON.stringify({ sdp: connections[remotePeerId].localDescription }),
           );
+
         });
         socketRef.current.on("signal", async (fromUserId, data) => {
+          // console.log(fromUserId);
           try {
             //fromuserID means peer2's id which while sending we have established the connections which means connections[fromUserId] is nothing but peer1 current rtcpc
             const pc = connections[fromUserId];
@@ -136,6 +138,7 @@ function VideoMeeting(){
             if(signalData.sdp.type === "offer") {
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
+              // console.log(pc);
               socketRef.current.emit(
                 "signal",
                 fromUserId,
@@ -143,6 +146,7 @@ function VideoMeeting(){
               );
             }
             else if(signalData.sdp.type === "answer") {
+              // console.log(connections[fromUserId]);
               console.log("SDP negotiation completed");
             }
           }catch (err) {
@@ -155,7 +159,7 @@ function VideoMeeting(){
               await connections[fromUserId].addIceCandidate(data.candidate);
             }
           } catch (err) {
-            console.log(err);
+            console.log(err); 
           }
         });
         socketRef.current.emit("join-call",roomId);

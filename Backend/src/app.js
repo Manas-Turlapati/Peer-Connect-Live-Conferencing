@@ -19,7 +19,7 @@ app.get("/getTurn",async(req,res)=>{
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        expiryInSeconds: 86400,
+        expiryInSeconds: 3600,
         label: "exampleLabel",
       }),
     },
@@ -81,9 +81,10 @@ io.on("connection", (socket) => {
         connections[path] = [];
       }
       connections[path].push(socket.id);
+      
       console.log(path+"This is from the backend");
       // {
-      //   http://localhost:5173/dummy:[
+      //   sdifboifnqoifnasond23:[
       //        63ngMY4oOzwXt3luAAAB,Aj1bltpzDI1cTQevAAAB,.......
       //   ],
       //
@@ -91,7 +92,10 @@ io.on("connection", (socket) => {
       time[path] = new Date();
       //to send the message that new user joined to all the clients that are connected to the specific room
       connections[path].forEach((element) => {
-        io.to(element).emit("user-joined", socket.id);
+        console.log(element+" "+socket.id);
+        if(element!==socket.id){
+          io.to(element).emit("user-joined", socket.id);
+        }
       });
       if (messages[path] !== undefined) {
         //to send all messages to the curr client of the specific room he joined like all clients messages including the prev ones
@@ -164,6 +168,5 @@ io.on("connection", (socket) => {
     socket.on("signal",(toId,message)=>{
       io.to(toId).emit("signal",socket.id,message);
     })
-    
 })
 app.use("/auth", userRouter);
