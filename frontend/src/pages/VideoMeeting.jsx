@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { io } from "socket.io-client";
 import toast, { Toaster } from "react-hot-toast";
+import { formHelperTextClasses } from '@mui/material/FormHelperText';
 //get the signalling server because 2 peers are not able to sajre
 let server_url = "http://localhost:3000";
 // connections = { "socketId123": pc1, "socketId456": pc2 }
@@ -132,9 +133,43 @@ function VideoMeeting(){
           // console.log(fromUserId);
           try {
             //fromuserID means peer2's id which while sending we have established the connections which means connections[fromUserId] is nothing but peer1 current rtcpc
-            const pc = connections[fromUserId];
+            let pc = connections[fromUserId];
             const signalData = JSON.parse(data);
-            await pc.setRemoteDescription(signalData.sdp);
+            if (!pc) {
+              let res = await fetch("http://localhost:3000/turn");
+              let val = await res.json();
+              //creating the rtc peer connection on the both sides
+              //i)configuring the rtcpeerconncetion
+              let peerConfigConnections = {
+                iceServers: val.data,
+              };
+              //ii)establishing the rtcPeerConnections between the peers
+              const rtcpeerConnection = new RTCPeerConnection(
+                peerConfigConnections,
+              );
+              //iii)store in connections with key as the remote peer's id and object as the rtcpc object because u want to know which config u have used to connect with them
+              //so first of all peer1 does peer2id:rtcpcobject of peer1 and peer2 does is peer1id:rtcpc object of peer2
+              connections[fromUserId] = rtcpeerConnection;
+              pc = rtcpeerConnection;
+              //connections[toUserId] contains ur rtcPeerConfiguartion only
+              //iv)adding the tracks to the rtcPeerConnections
+              const userArray = window.localStream.getTracks();
+              userArray.forEach((el) => {
+                connections[fromUserId].addTrack(el, window.localStream);
+              });
+              //listening on the ice servers
+              connections[fromUserId].onicecandidate = (event) => {
+                if (event.candidate) {
+                  socketRef.current.emit("icecandidate",fromUserId, {
+                    type: "ice-candidate",
+                    candidate: event.candidate,
+                  });
+                }
+              };
+            }
+            await pc.setRemoteDescription(
+              new RTCSessionDescription(signalData.sdp),
+            );
             if(signalData.sdp.type === "offer") {
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
@@ -156,7 +191,7 @@ function VideoMeeting(){
         socketRef.current.on("icecandidate", async (data, fromUserId) => {
           try {
             if (data && data.candidate) {
-              await connections[fromUserId].addIceCandidate(data.candidate);
+              await connections[fromUserId].addIceCandidate(new RTCIceCandidate(data.candidate));
             }
           } catch (err) {
             console.log(err); 
