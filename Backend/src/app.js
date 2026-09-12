@@ -77,11 +77,11 @@ io.on("connection", (socket) => {
     console.log(`${socket.id} is connected with the backend successfully`);
     socket.on("join-call",(path)=>{
       //these all below things happens when the user joins the call
-      if (connections[path] == undefined) {
+      if (connections[path] === undefined) {
         connections[path] = [];
       }
       connections[path].push(socket.id);
-      
+      console.log(connections);
       console.log(path+"This is from the backend");
       // {
       //   sdifboifnqoifnasond23:[

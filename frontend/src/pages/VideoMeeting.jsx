@@ -13,13 +13,14 @@ let server_url = "http://localhost:3000";
 //it is a purely js object that stores socketid and its pc pc is the peer connection
 //pc is js object that contains local ip address,public ip which stun sends back
 let connections = {};
+let pendingIceCandidates = {};
 //what stun server are we talking about now we declare the stun server which we are going to use
 
 
 
 function VideoMeeting(){
     const navigate = useNavigate();
-    let roomId = uuidv4();
+    let roomId = useRef("");
     var socketRef = useRef();
     //socket id we will store our id
     let socketIdRef = useRef();
@@ -51,6 +52,8 @@ function VideoMeeting(){
     let [videos,setVideos] = useState([]);
     // if(isChrome()===false){
     // }connect
+    let[room,setRoomId] = useState("");
+    let[join,setJoin] = useState(false);
     let videoStream = null;
     let audioStream = null;
     let getUserMedia = ()=>{
@@ -76,15 +79,20 @@ function VideoMeeting(){
       }
     }
     
-    let getMedia = async()=>{
+    let getMedia = async(create)=>{
       setVideo(videoPermission);
       setAudio(audioPermission);
-      connectToSocketServer();
+      connectToSocketServer(create);
     }
-    function connectToSocketServer(){
+    function connectToSocketServer(create){
       socketRef.current = io(server_url);
       socketRef.current.on("connect", () => {
         console.log(`${socketRef.current.id} is connected with the frontend successfully`);
+       
+        let path = create?roomId.current:room;
+        console.log("Other room id"+room);
+        console.log("Current User id"+roomId.current);
+        socketRef.current.emit("join-call",path);
         socketRef.current.on("user-joined",async (remotePeerId) => {
           let res = await fetch("http://localhost:3000/turn");
           let val = await res.json();
@@ -129,6 +137,7 @@ function VideoMeeting(){
           );
 
         });
+        
         socketRef.current.on("signal", async (fromUserId, data) => {
           // console.log(fromUserId);
           try {
@@ -170,6 +179,13 @@ function VideoMeeting(){
             await pc.setRemoteDescription(
               new RTCSessionDescription(signalData.sdp),
             );
+            if (pendingIceCandidates[fromUserId]) {
+              for (const candidate of pendingIceCandidates[fromUserId]) {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+              }
+
+              delete pendingIceCandidates[fromUserId];
+            }
             if(signalData.sdp.type === "offer") {
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
@@ -190,6 +206,16 @@ function VideoMeeting(){
         });
         socketRef.current.on("icecandidate", async (data, fromUserId) => {
           try {
+            if(!data||!data.candidate) return;
+            if (!connections[fromUserId]) {
+              if (!pendingIceCandidates[fromUserId]) {
+                pendingIceCandidates[fromUserId] = [];
+              }
+              pendingIceCandidates[fromUserId].push(data.candidate);
+
+              console.log("ICE candidate queued for:", fromUserId);
+              return;
+            }
             if (data && data.candidate) {
               await connections[fromUserId].addIceCandidate(new RTCIceCandidate(data.candidate));
             }
@@ -197,7 +223,6 @@ function VideoMeeting(){
             console.log(err); 
           }
         });
-        socketRef.current.emit("join-call",roomId);
         socketRef.current.emit("chat-message","Hi!Everyone I am Manas",askForUsername?username:"");
       });
 
@@ -259,7 +284,10 @@ function VideoMeeting(){
         console.log(err);
       }
     }
-    async function connect(){
+    
+    
+    
+    async function connect(create){
       setAskForUsername(false);
       if(username===""){
         setAskForUsername(true);
@@ -267,11 +295,10 @@ function VideoMeeting(){
         return;
       }
       toast.success("Connection Successfull!");
-      
       await getPermission();
-      await getMedia();
+      await getMedia(create);
       setTimeout(()=>{
-        navigate(`/room/${roomId}`);
+        create?navigate(`/room/${roomId.current}`):navigate(`/room/${room}`);
       },5000)
     }
     return (
@@ -280,17 +307,51 @@ function VideoMeeting(){
         <br />
         <TextField
           id="outlined-basic"
-          label="Outlined"
+          label="Enter the Name"
           variant="outlined"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
         <br />
         <br />
-        <Button variant="contained" onClick={connect}>
-          Connect
+        <Button
+          variant="contained"
+          style={{ margin: "12px" }}
+          onClick={async()=>{
+            roomId.current = uuidv4();
+            setJoin(false);
+            await connect(true);
+          }}
+          
+        >
+          Create
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() =>{ 
+            setJoin(true);
+          }}
+          style={{ margin: "12px" }}
+        >
+          Join
         </Button>
         <br />
+        {join && (
+          <>
+            <TextField
+              id="outlined-basic"
+              label="Enter Room ID"
+              variant="outlined"
+              value={room}
+              onChange={(e) => setRoomId(e.target.value)}
+            />
+            <Button
+              variant="contained"
+              style={{ margin: "12px" }}
+              onClick={async()=>{await connect(false)}}
+            >Connect</Button>
+          </>
+        )}
         <br />
         <div>
           <video
