@@ -1,101 +1,39 @@
-import {React,useRef,useState,useEffect} from 'react';
+import {useRef,useState} from 'react';
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
-import { Experimental_CssVarsProvider } from '@mui/material/styles';
 import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { io } from "socket.io-client";
-import toast, { Toaster } from "react-hot-toast";
-import { formHelperTextClasses } from '@mui/material/FormHelperText';
+import toast from "react-hot-toast";
 //get the signalling server because 2 peers are not able to sajre
 let server_url = "http://localhost:3000";
 // connections = { "socketId123": pc1, "socketId456": pc2 }
 //it is a purely js object that stores socketid and its pc pc is the peer connection
 //pc is js object that contains local ip address,public ip which stun sends back
 let connections = {};
+let allStreams = [];
+window.streams = allStreams;
 let pendingIceCandidates = {};
 //what stun server are we talking about now we declare the stun server which we are going to use
-
-
-
 function VideoMeeting(){
     const navigate = useNavigate();
     let roomId = useRef("");
     var socketRef = useRef();
-    //socket id we will store our id
-    let socketIdRef = useRef();
     //our video that we can see and remaining peoples we will define an array which is a ref means it doesnt render when the component renders
     let localVideoRef = useRef();
-    //switching for the video permission
-    let [videoPermission,setVideoPermission] = useState(true);//.
-    //switching on and off audio permission
-    let [audioPermission,setAudioPermission] = useState(true);//.
-    //switching on and off video
-    let [video,setVideo] = useState(true);
-    //switching on and off audio
-    let [audio,setAudio] = useState(true);
-    //switching on and off screen share
-    let [screenShare,setScreenShare] = useState();
-    //showing options like pop up below
-    let [popup,showPop] = useState();
-    //screenshare available because when one person share screen others cannot 
-    let [screenShareAvailable,setScreenShareAvailable] = useState(false);
-    //all the messages from all the clients
-    let [messages,setMessages] = useState([]);
-    //the message that we are going to write
-    let [message,setMessage] = useState("");
-    //message notification that new message has been occured
-    let [newMessageNotification,setnewMessageNotification] = useState(0);
     //asking for username if someone logging as guest
     let [askForUsername,setAskForUsername] = useState(true);
     let [username,setUsername] = useState("");
-    let [videos,setVideos] = useState([]);
-    // if(isChrome()===false){
-    // }connect
     let[room,setRoomId] = useState("");
     let[join,setJoin] = useState(false);
-    let videoStream = null;
-    let audioStream = null;
-    let getUserMedia = ()=>{
-      if((audioPermission&&audio)||(video&&videoPermission)){
-        navigator.mediaDevices.getUserMedia({ video: video, audio: audio })
-        .then(()=>{
-          getUserMediaSuccess();
-        })
-        .then((stream)=>{
-        })
-        .catch((err)=>{
-          console.log(err);
-        })
-      }else{
-        try{
-          let tracks = localVideoRef.current.srcObject.getTracks();
-          tracks.forEach((e)=>e.stop());
-        }
-        catch(err){
-          console.log(err);
-        }
-      
-      }
-    }
-    
     let getMedia = async(create)=>{
-      setVideo(videoPermission);
-      setAudio(audioPermission);
       connectToSocketServer(create);
     }
     function connectToSocketServer(create){
       socketRef.current = io(server_url);
       socketRef.current.on("connect", () => {
-        console.log(`${socketRef.current.id} is connected with the frontend successfully`);
-        let allStreams = [];
-        window.streams = allStreams;
-        if(create){
-          allStreams.push(window.localStream);
-        }
+        
         let path = create?roomId.current:room;
-        console.log("Other room id"+room);
-        console.log("Current User id"+roomId.current);
         socketRef.current.emit("join-call",path);
         socketRef.current.on("user-joined",async (remotePeerId) => {
           let res = await fetch("http://localhost:3000/turn");
@@ -123,6 +61,7 @@ function VideoMeeting(){
           const remoteStream = event.streams[0];
               if(remoteStream && !allStreams.some((stream)=>stream.id===remoteStream.id)){
                 allStreams.push(remoteStream);
+                window.dispatchEvent(new CustomEvent("stream_updated"))
               }
           }
           //listening on the ice servers
@@ -134,7 +73,6 @@ function VideoMeeting(){
               })
             }
           }
-          
           //making the sdp session descrption protocol negotiation which means sending an offer and receiving the answer
           //i)creating the offer and setting the local description means telling the packet that its offer not answer
           const offer = await connections[remotePeerId].createOffer();
@@ -174,15 +112,17 @@ function VideoMeeting(){
               //connections[toUserId] contains ur rtcPeerConfiguartion only
               //iv)adding the tracks to the rtcPeerConnections
               const userArray = window.localStream.getTracks();
-              console.log(userArray);
               userArray.forEach((el) => {
                 connections[fromUserId].addTrack(el, window.localStream);
               });
               connections[fromUserId].ontrack = (event) => {
                 const remoteStream = event.streams[0];
-                if (remoteStream) {
-                  console.log("Remote stream received:", remoteStream);
+                if (
+                  remoteStream &&
+                  !allStreams.some((stream) => stream.id === remoteStream.id)
+                ) {
                   allStreams.push(remoteStream);
+                  window.dispatchEvent(new CustomEvent("stream_updated"));
                 }
               };
               //listening on the ice servers
@@ -204,6 +144,7 @@ function VideoMeeting(){
               } 
               delete pendingIceCandidates[fromUserId];
             }
+
             if(signalData.sdp.type === "offer") {
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
@@ -245,62 +186,41 @@ function VideoMeeting(){
       });
 
     }
-    let getPermission = async function(){
+    let getPermission = async function(){ 
+      let userMediaStream;
       try{
-        try{
-          videoStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-          });
-          //video permission
-          if (videoStream) {
-            console.log(videoStream);
-            setVideoPermission(true);
-          } else {
-            setVideoPermission(false);
-          }
-        }
-        catch(err){
-          console.log(err);
-        }
-        try{
-          audioStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-          });
-          //audio permission
-          if (audioStream) {
-            setAudioPermission(true);
-          } else {
-            setAudioPermission(false);
-          }
-        }
-        
-        catch(err){
-          console.log(err);
-        }
-        //combined stream both audio and video
-        //here videoStream only works videoPermission and audioPermission only works after rerender until then they are unknown 
-        //so we use !!videoStream and !!audioStream to exactly get when we need to send the userMedia
-        let userMediaStream;
-        if(videoStream||audioStream){
-          try{
-            userMediaStream = await navigator.mediaDevices.getUserMedia({
-              video:!!videoStream,
-              audio:!!audioStream,
-            });
-          }
-          catch(err){
-            console.log(err);
-          }
-        }
-        if(userMediaStream){
-          window.localStream = userMediaStream;//when u navigate from one page to other page we use navigator so what happens is the the dom element which is stored in the useRef.current that is your video tag gets destroyed and u cant pass the ref as a state variable so we need to pass the stream so to store the  stream i have used window.localStream so its like somewhat similar to the localStorage like u can access from the other page as stream = window.localStream
-          //here localVideoRef.current means <video> dom element
-          localVideoRef.current.srcObject= userMediaStream;
-
-        }
+        userMediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio:true
+        });
       }
       catch(err){
         console.log(err);
+      }
+      if (!userMediaStream) {
+        try {
+          userMediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
+      // 3. if that failed too, try mic only
+      if (!userMediaStream) {
+        try {
+          userMediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+        } catch (err) {
+          console.log(err);
+        }
+      }
+      if(userMediaStream){
+        window.localStream = userMediaStream;//here localVideoRef.current means <video> dom element
+        localVideoRef.current.srcObject= userMediaStream;
+        allStreams.push(userMediaStream);
       }
     }
     
@@ -313,12 +233,15 @@ function VideoMeeting(){
         toast.error("Username is required!")
         return;
       }
-      toast.success("Connection Successfull!");
       await getPermission();
+      if(!window.localStream){
+        toast.error("Access Denied!");
+        return;
+      }
+      toast.success("Connection Successfull!");
+
       await getMedia(create);
-      setTimeout(()=>{
-        create?navigate(`/room/${roomId.current}`):navigate(`/room/${room}`);
-      },5000)
+      create?navigate(`/room/${roomId.current}`):navigate(`/room/${room}`);
     }
     return (
       <div>

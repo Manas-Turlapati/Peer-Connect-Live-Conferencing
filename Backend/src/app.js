@@ -107,7 +107,7 @@ io.on("connection", (socket) => {
             "chat-message",
             el["data"],
             el["sender"],
-            el["socket-id-sender"],
+            el["socket-id-of-sender"],
           );
         });
       }

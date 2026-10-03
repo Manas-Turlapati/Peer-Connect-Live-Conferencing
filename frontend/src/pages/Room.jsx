@@ -1,12 +1,16 @@
-import { useContext,useEffect,useRef} from "react";
+import { useContext,useEffect,useRef,useState} from "react";
 import { UserContext } from "../MyContext.jsx";
 import { useParams } from "react-router-dom";
 function Room(){
-  const streams = window.streams;
-  console.log(
-    "Streams being rendered:",
-    streams.map((stream) => stream.id),
-  );
+  let [stream,setStream] = useState([...window.streams]);
+  console.log(stream);
+  useEffect(()=>{
+    const update = () => setStream([...window.streams]);
+    window.addEventListener("stream_updated", update);
+    update();
+    return () => window.removeEventListener("stream_updated", update);
+  },[])
+  let streams = window.streams;
   return (
     <div>
       {streams.map((stream, index) => (
