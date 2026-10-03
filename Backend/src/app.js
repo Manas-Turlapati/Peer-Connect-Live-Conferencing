@@ -136,12 +136,12 @@ io.on("connection", (socket) => {
       })
     })
     socket.on("icecandidate",(toUserId,data)=>{
-      if(data.candidate&&data){
+      if(data&&data.candidate){
         io.to(toUserId).emit("icecandidate",data,socket.id);
       }
     })
     socket.on("disconnect",()=>{
-      console.log("disconnected from the server");
+      console.log(`${socket.id} disconnected from the server`);
       var key;
       Object.entries(connections).forEach(([roomKey,roomVal])=>{
         if(roomVal.includes(socket.id)){

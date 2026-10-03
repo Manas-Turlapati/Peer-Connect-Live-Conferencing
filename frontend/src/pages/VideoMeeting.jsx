@@ -88,7 +88,11 @@ function VideoMeeting(){
       socketRef.current = io(server_url);
       socketRef.current.on("connect", () => {
         console.log(`${socketRef.current.id} is connected with the frontend successfully`);
-       
+        let allStreams = [];
+        window.streams = allStreams;
+        if(create){
+          allStreams.push(window.localStream);
+        }
         let path = create?roomId.current:room;
         console.log("Other room id"+room);
         console.log("Current User id"+roomId.current);
@@ -111,9 +115,16 @@ function VideoMeeting(){
           //connections[toUserId] contains ur rtcPeerConfiguartion only
           //iv)adding the tracks to the rtcPeerConnections
           const userArray = window.localStream.getTracks();
+          
           userArray.forEach((el) => {
             connections[remotePeerId].addTrack(el, window.localStream);
           });
+          connections[remotePeerId].ontrack = (event)=>{
+          const remoteStream = event.streams[0];
+              if(remoteStream && !allStreams.some((stream)=>stream.id===remoteStream.id)){
+                allStreams.push(remoteStream);
+              }
+          }
           //listening on the ice servers
           connections[remotePeerId].onicecandidate = (event)=>{
             if(event.candidate){
@@ -137,7 +148,7 @@ function VideoMeeting(){
           );
 
         });
-        
+       
         socketRef.current.on("signal", async (fromUserId, data) => {
           // console.log(fromUserId);
           try {
@@ -163,9 +174,17 @@ function VideoMeeting(){
               //connections[toUserId] contains ur rtcPeerConfiguartion only
               //iv)adding the tracks to the rtcPeerConnections
               const userArray = window.localStream.getTracks();
+              console.log(userArray);
               userArray.forEach((el) => {
                 connections[fromUserId].addTrack(el, window.localStream);
               });
+              connections[fromUserId].ontrack = (event) => {
+                const remoteStream = event.streams[0];
+                if (remoteStream) {
+                  console.log("Remote stream received:", remoteStream);
+                  allStreams.push(remoteStream);
+                }
+              };
               //listening on the ice servers
               connections[fromUserId].onicecandidate = (event) => {
                 if (event.candidate) {
@@ -182,8 +201,7 @@ function VideoMeeting(){
             if (pendingIceCandidates[fromUserId]) {
               for (const candidate of pendingIceCandidates[fromUserId]) {
                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
-              }
-
+              } 
               delete pendingIceCandidates[fromUserId];
             }
             if(signalData.sdp.type === "offer") {
@@ -235,6 +253,7 @@ function VideoMeeting(){
           });
           //video permission
           if (videoStream) {
+            console.log(videoStream);
             setVideoPermission(true);
           } else {
             setVideoPermission(false);
@@ -320,6 +339,7 @@ function VideoMeeting(){
           onClick={async()=>{
             roomId.current = uuidv4();
             setJoin(false);
+          
             await connect(true);
           }}
           
