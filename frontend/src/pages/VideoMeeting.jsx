@@ -13,6 +13,7 @@ let server_url = "http://localhost:3000";
 let connections = {};
 let allStreams = [];
 window.streams = allStreams;
+let streamsWithSocketId = {};
 let pendingIceCandidates = {};
 //what stun server are we talking about now we declare the stun server which we are going to use
 function VideoMeeting(){
@@ -31,10 +32,12 @@ function VideoMeeting(){
     }
     function connectToSocketServer(create){
       socketRef.current = io(server_url);
+
       socketRef.current.on("connect", () => {
         
         let path = create?roomId.current:room;
         socketRef.current.emit("join-call",path);
+        streamsWithSocketId[socketRef.current.id] = window.localStream;
         socketRef.current.on("user-joined",async (remotePeerId) => {
           let res = await fetch("http://localhost:3000/turn");
           let val = await res.json();
@@ -61,6 +64,7 @@ function VideoMeeting(){
           const remoteStream = event.streams[0];
               if(remoteStream && !allStreams.some((stream)=>stream.id===remoteStream.id)){
                 allStreams.push(remoteStream);
+                streamsWithSocketId[remotePeerId] = remoteStream;
                 window.dispatchEvent(new CustomEvent("stream_updated"))
               }
           }
@@ -122,8 +126,10 @@ function VideoMeeting(){
                   !allStreams.some((stream) => stream.id === remoteStream.id)
                 ) {
                   allStreams.push(remoteStream);
+                  streamsWithSocketId[fromUserId] = remoteStream;
                   window.dispatchEvent(new CustomEvent("stream_updated"));
                 }
+                
               };
               //listening on the ice servers
               connections[fromUserId].onicecandidate = (event) => {
@@ -183,6 +189,25 @@ function VideoMeeting(){
           }
         });
         socketRef.current.emit("chat-message","Hi!Everyone I am Manas",askForUsername?username:"");
+        socketRef.current.on("user-left",async(disconnectedUserId)=>{
+          try{
+            let disconnectedStream = streamsWithSocketId[disconnectedUserId];
+            const index = allStreams.indexOf(disconnectedStream);
+            if (index !== -1) {
+              allStreams.splice(index, 1);
+            }
+            if (connections[disconnectedUserId]) {
+              connections[disconnectedUserId].close();
+              delete connections[disconnectedUserId];
+            }
+            delete streamsWithSocketId[disconnectedUserId];
+            delete pendingIceCandidates[disconnectedUserId];
+            window.dispatchEvent(new CustomEvent("stream_updated"));
+          }
+          catch(err){
+            console.log(err);
+          }
+        })
       });
 
     }
@@ -221,11 +246,9 @@ function VideoMeeting(){
         window.localStream = userMediaStream;//here localVideoRef.current means <video> dom element
         localVideoRef.current.srcObject= userMediaStream;
         allStreams.push(userMediaStream);
+      
       }
     }
-    
-    
-    
     async function connect(create){
       setAskForUsername(false);
       if(username===""){

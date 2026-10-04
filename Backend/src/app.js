@@ -19,7 +19,7 @@ app.get("/getTurn",async(req,res)=>{
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        expiryInSeconds: 3600,
+        expiryInSeconds: 86400,
         label: "exampleLabel",
       }),
     },
@@ -164,7 +164,6 @@ io.on("connection", (socket) => {
     //if a's browser wants to send to b's browser 
     //first 'a' sends signal event to server with parameters of a sends (b id,a  message) to server
     //then server receives and send or emit this message to b by using b id which is (toId,message)
-
     socket.on("signal",(toId,message)=>{
       io.to(toId).emit("signal",socket.id,message);
     })
