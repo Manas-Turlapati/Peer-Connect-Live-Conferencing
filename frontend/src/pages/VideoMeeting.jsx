@@ -15,6 +15,28 @@ let allStreams = [];
 window.streams = allStreams;
 let streamsWithSocketId = {};
 let pendingIceCandidates = {};
+export function leaveMeeting() {
+  //removing peer connections
+  for (const id in connections) {
+    connections[id].close();
+    delete connections[id];
+  }
+  //removing the streamsWithTheSocketId
+  for (const id in streamsWithSocketId) {
+    delete streamsWithSocketId[id];
+  }
+  for (const id in pendingIceCandidates) {
+    delete pendingIceCandidates[id];
+  }
+  for (const tracks of window.localStream?.getTracks()??[]){
+    tracks.stop();
+  }
+    //remove the current connection
+    window.localStream = undefined;
+  window.socket?.disconnect();
+  allStreams.length = 0;
+  
+}
 //what stun server are we talking about now we declare the stun server which we are going to use
 function VideoMeeting(){
     const navigate = useNavigate();
@@ -30,11 +52,12 @@ function VideoMeeting(){
     let getMedia = async(create)=>{
       connectToSocketServer(create);
     }
+    
     function connectToSocketServer(create){
       socketRef.current = io(server_url);
-
+      
       socketRef.current.on("connect", () => {
-        
+        window.socket = socketRef.current;
         let path = create?roomId.current:room;
         socketRef.current.emit("join-call",path);
         streamsWithSocketId[socketRef.current.id] = window.localStream;
