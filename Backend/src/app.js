@@ -1,5 +1,7 @@
 require("dotenv").config();
 const userRouter = require("./routes/user.js");
+const {verifyToken} = require("./middleware.js");
+const {router:meetingRouter} = require("./routes/meeting.js");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -169,3 +171,4 @@ io.on("connection", (socket) => {
     })
 })
 app.use("/auth", userRouter);
+app.use("/meeting",meetingRouter);

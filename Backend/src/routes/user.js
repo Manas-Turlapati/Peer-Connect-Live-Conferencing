@@ -24,7 +24,7 @@ router.post("/login", async (req, res) => {
       if (!isMatch) {
         return res.status(400).json({ msg: "Invalid password" });
       }
-      //generate the token and send it to the backend using jwt.sign and secret key
+      //generate the token and send it to the frontend using jwt.sign and secret key
       const token = jwt.sign(
         { id: existingUser._id, username: existingUser.username },
         process.env.JWT_SECRET,
@@ -53,7 +53,7 @@ router.post("/register", async (req, res) => {
       });
       return res.json({ msg: "User has been added Successfully!" });
     } else {
-      return res.status(400).json({ msg: "User already exists!" });
+      return res.status(400).json({ msg: "User already exists! try logging in!" });
     }
   } catch (err) {
     return res.status(500).json({ error: err.message });

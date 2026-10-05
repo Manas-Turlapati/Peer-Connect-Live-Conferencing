@@ -1,6 +1,0 @@
-function Webrtc(){
-    return(
-        <>
-        </>
-    )
-}

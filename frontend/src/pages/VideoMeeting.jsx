@@ -31,12 +31,12 @@ export function leaveMeeting() {
   for (const tracks of window.localStream?.getTracks()??[]){
     tracks.stop();
   }
-    //remove the current connection
-    window.localStream = undefined;
+  //remove the current connection
+  window.localStream = undefined;
   window.socket?.disconnect();
   allStreams.length = 0;
-  
 }
+
 //what stun server are we talking about now we declare the stun server which we are going to use
 function VideoMeeting(){
     const navigate = useNavigate();
@@ -52,7 +52,46 @@ function VideoMeeting(){
     let getMedia = async(create)=>{
       connectToSocketServer(create);
     }
-    
+    async function socketConnection(id){
+      let res = await fetch("http://localhost:3000/turn");
+      let val = await res.json();
+      //creating the rtc peer connection on the both sides
+      //i)configuring the rtcpeerconncetion
+      let peerConfigConnections = {
+        iceServers: val.data,
+      };
+      //ii)establishing the rtcPeerConnections between the peers
+      const rtcpeerConnection = new RTCPeerConnection(
+        peerConfigConnections,
+      );
+      //iii)store in connections with key as the remote peer's id and object as the rtcpc object because u want to know which config u have used to connect with them
+      //so first of all peer1 does peer2id:rtcpcobject of peer1 and peer2 does is peer1id:rtcpc object of peer2
+      connections[id] = rtcpeerConnection;
+      //connections[toUserId] contains ur rtcPeerConfiguartion only
+      //iv)adding the tracks to the rtcPeerConnections
+      const userArray = window.localStream.getTracks();
+      
+      userArray.forEach((el) => {
+        connections[id].addTrack(el, window.localStream);
+      });
+      connections[id].ontrack = (event)=>{
+      const remoteStream = event.streams[0];
+          if(remoteStream && !allStreams.some((stream)=>stream.id===remoteStream.id)){
+            allStreams.push(remoteStream);
+            streamsWithSocketId[id] = remoteStream;
+            window.dispatchEvent(new CustomEvent("stream_updated"))
+          }
+      }
+      //listening on the ice servers
+      connections[id].onicecandidate = (event)=>{
+        if(event.candidate){
+          socketRef.current.emit("icecandidate",id,{
+            type:"ice-candidate",
+            candidate:event.candidate
+          })
+        }
+      }
+    }
     function connectToSocketServer(create){
       socketRef.current = io(server_url);
       
@@ -62,44 +101,7 @@ function VideoMeeting(){
         socketRef.current.emit("join-call",path);
         streamsWithSocketId[socketRef.current.id] = window.localStream;
         socketRef.current.on("user-joined",async (remotePeerId) => {
-          let res = await fetch("http://localhost:3000/turn");
-          let val = await res.json();
-          //creating the rtc peer connection on the both sides
-          //i)configuring the rtcpeerconncetion
-          let peerConfigConnections = {
-            iceServers: val.data,
-          };
-          //ii)establishing the rtcPeerConnections between the peers
-          const rtcpeerConnection = new RTCPeerConnection(
-            peerConfigConnections,
-          );
-          //iii)store in connections with key as the remote peer's id and object as the rtcpc object because u want to know which config u have used to connect with them
-          //so first of all peer1 does peer2id:rtcpcobject of peer1 and peer2 does is peer1id:rtcpc object of peer2
-          connections[remotePeerId] = rtcpeerConnection;
-          //connections[toUserId] contains ur rtcPeerConfiguartion only
-          //iv)adding the tracks to the rtcPeerConnections
-          const userArray = window.localStream.getTracks();
-          
-          userArray.forEach((el) => {
-            connections[remotePeerId].addTrack(el, window.localStream);
-          });
-          connections[remotePeerId].ontrack = (event)=>{
-          const remoteStream = event.streams[0];
-              if(remoteStream && !allStreams.some((stream)=>stream.id===remoteStream.id)){
-                allStreams.push(remoteStream);
-                streamsWithSocketId[remotePeerId] = remoteStream;
-                window.dispatchEvent(new CustomEvent("stream_updated"))
-              }
-          }
-          //listening on the ice servers
-          connections[remotePeerId].onicecandidate = (event)=>{
-            if(event.candidate){
-              socketRef.current.emit("icecandidate",remotePeerId,{
-                type:"ice-candidate",
-                candidate:event.candidate
-              })
-            }
-          }
+          await socketConnection(remotePeerId);
           //making the sdp session descrption protocol negotiation which means sending an offer and receiving the answer
           //i)creating the offer and setting the local description means telling the packet that its offer not answer
           const offer = await connections[remotePeerId].createOffer();
@@ -121,48 +123,8 @@ function VideoMeeting(){
             let pc = connections[fromUserId];
             const signalData = JSON.parse(data);
             if (!pc) {
-              let res = await fetch("http://localhost:3000/turn");
-              let val = await res.json();
-              //creating the rtc peer connection on the both sides
-              //i)configuring the rtcpeerconncetion
-              let peerConfigConnections = {
-                iceServers: val.data,
-              };
-              //ii)establishing the rtcPeerConnections between the peers
-              const rtcpeerConnection = new RTCPeerConnection(
-                peerConfigConnections,
-              );
-              //iii)store in connections with key as the remote peer's id and object as the rtcpc object because u want to know which config u have used to connect with them
-              //so first of all peer1 does peer2id:rtcpcobject of peer1 and peer2 does is peer1id:rtcpc object of peer2
-              connections[fromUserId] = rtcpeerConnection;
-              pc = rtcpeerConnection;
-              //connections[toUserId] contains ur rtcPeerConfiguartion only
-              //iv)adding the tracks to the rtcPeerConnections
-              const userArray = window.localStream.getTracks();
-              userArray.forEach((el) => {
-                connections[fromUserId].addTrack(el, window.localStream);
-              });
-              connections[fromUserId].ontrack = (event) => {
-                const remoteStream = event.streams[0];
-                if (
-                  remoteStream &&
-                  !allStreams.some((stream) => stream.id === remoteStream.id)
-                ) {
-                  allStreams.push(remoteStream);
-                  streamsWithSocketId[fromUserId] = remoteStream;
-                  window.dispatchEvent(new CustomEvent("stream_updated"));
-                }
-                
-              };
-              //listening on the ice servers
-              connections[fromUserId].onicecandidate = (event) => {
-                if (event.candidate) {
-                  socketRef.current.emit("icecandidate",fromUserId, {
-                    type: "ice-candidate",
-                    candidate: event.candidate,
-                  });
-                }
-              };
+              await socketConnection(fromUserId);
+              pc = connections[fromUserId];
             }
             await pc.setRemoteDescription(
               new RTCSessionDescription(signalData.sdp),
