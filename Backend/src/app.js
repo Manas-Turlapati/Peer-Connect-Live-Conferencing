@@ -1,5 +1,5 @@
 require("dotenv").config();
-const userRouter = require("./routes/user.js");
+const {router:userRouter} = require("./routes/user.js");
 const {verifyToken} = require("./middleware.js");
 const {router:meetingRouter} = require("./routes/meeting.js");
 const express = require("express");

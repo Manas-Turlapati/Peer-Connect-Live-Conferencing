@@ -3,6 +3,8 @@ import {useState} from 'react';
 import toast, { Toaster } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useContext} from "react";
+import { UserContext } from "../UserContext";
 function Login() {
   let [details,setDetails] = useState({
     loginName:"",
@@ -14,6 +16,7 @@ function Login() {
         ...prev,[e.target.name]:e.target.value
     }))
   }
+  const user = useContext(UserContext);
   async function display(e){
     e.preventDefault();
     if(details.loginName===""||details.loginPassword===""){
@@ -35,6 +38,7 @@ function Login() {
             return;
         }
         localStorage.setItem("token",data.token);
+        user.setLogin(true);
         toast.success("Welcome Back!");
         navigate("/dummy");
         setDetails(
@@ -95,6 +99,7 @@ function Login() {
       </div>
     </div>
   );
+  
 }
 
 export default Login;

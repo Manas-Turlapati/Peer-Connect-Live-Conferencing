@@ -5,9 +5,11 @@ const { verifyToken } = require("../middleware.js");
 router.post("/", verifyToken, async (req, res) => {
   try {
     const { code } = req.body;
+    console.log(code);
     if (!code) {
       return res.status(400).json({ error: "please generate the code" });
     }
+    
     await Meeting.create({ user_id: req.user.id, meetingCode: code });
     res.status(201).json({
       success: "Meeting has been added to the database!",

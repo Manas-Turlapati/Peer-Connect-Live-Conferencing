@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
+import { useContext } from 'react';
+import { UserContext } from '../UserContext';
 //get the signalling server because 2 peers are not able to sajre
 let server_url = "http://localhost:3000";
 // connections = { "socketId123": pc1, "socketId456": pc2 }
@@ -25,9 +27,12 @@ export function leaveMeeting() {
   for (const id in streamsWithSocketId) {
     delete streamsWithSocketId[id];
   }
+  //removing the icecandidates
   for (const id in pendingIceCandidates) {
     delete pendingIceCandidates[id];
   }
+  //removing the tracks from the wi
+  //  ndow 
   for (const tracks of window.localStream?.getTracks()??[]){
     tracks.stop();
   }
@@ -40,6 +45,7 @@ export function leaveMeeting() {
 //what stun server are we talking about now we declare the stun server which we are going to use
 function VideoMeeting(){
     const navigate = useNavigate();
+    const user = useContext(UserContext);
     let roomId = useRef("");
     var socketRef = useRef();
     //our video that we can see and remaining peoples we will define an array which is a ref means it doesnt render when the component renders
@@ -52,6 +58,7 @@ function VideoMeeting(){
     let getMedia = async(create)=>{
       connectToSocketServer(create);
     }
+    console.log(user.login);
     async function socketConnection(id){
       let res = await fetch("http://localhost:3000/turn");
       let val = await res.json();
@@ -92,6 +99,7 @@ function VideoMeeting(){
         }
       }
     }
+
     function connectToSocketServer(create){
       socketRef.current = io(server_url);
       
@@ -241,6 +249,31 @@ function VideoMeeting(){
         toast.error("Username is required!")
         return;
       }
+      if (create&&user.login) {
+        let display = async function(){
+          let token = localStorage.getItem("token");
+          console.log("CREATE:", create);
+          console.log("ROOM ID:", roomId.current);
+          let res = await fetch("http://localhost:3000/meeting", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              code: roomId.current,
+            }),
+          });
+          let data = await res.json();
+          console.log(data);
+          if (!res.ok) {
+            toast.error(data.error || "Failed to save meeting");
+            return;
+          }
+        
+        }
+        await display();
+      }
       await getPermission();
       if(!window.localStream){
         toast.error("Access Denied!");
@@ -267,19 +300,17 @@ function VideoMeeting(){
         <Button
           variant="contained"
           style={{ margin: "12px" }}
-          onClick={async()=>{
+          onClick={async () => {
             roomId.current = uuidv4();
             setJoin(false);
-          
             await connect(true);
           }}
-          
         >
           Create
         </Button>
         <Button
           variant="contained"
-          onClick={() =>{ 
+          onClick={() => {
             setJoin(true);
           }}
           style={{ margin: "12px" }}
@@ -299,11 +330,26 @@ function VideoMeeting(){
             <Button
               variant="contained"
               style={{ margin: "12px" }}
-              onClick={async()=>{await connect(false)}}
-            >Connect</Button>
+              onClick={async () => {
+                await connect(false);
+              }}
+            >
+              Connect
+            </Button>
           </>
         )}
         <br />
+        {user.login && (
+          <>
+            <Button
+              variant="contained"
+              style={{ margin: "12px" }}
+              onClick={()=>{navigate("/history")}}
+            >
+              History
+            </Button>
+          </>
+        )}
         <div>
           <video
             ref={localVideoRef}
