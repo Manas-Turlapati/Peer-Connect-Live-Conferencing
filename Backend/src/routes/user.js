@@ -40,7 +40,7 @@ router.post("/login", async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { username, password, email } = req.body;
-    if(!username||!password){
+    if(!username||!password||!email){
         return res.status(400).json({ msg: "Please fill the required credentials!" });
     }
     const existingUser = await User.findOne({ username: username });

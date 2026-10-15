@@ -9,7 +9,6 @@ router.post("/", verifyToken, async (req, res) => {
     if (!code) {
       return res.status(400).json({ error: "please generate the code" });
     }
-    
     await Meeting.create({ user_id: req.user.id, meetingCode: code });
     res.status(201).json({
       success: "Meeting has been added to the database!",

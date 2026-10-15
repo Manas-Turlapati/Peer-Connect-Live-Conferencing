@@ -7,8 +7,6 @@ import { io } from "socket.io-client";
 import toast from "react-hot-toast";
 import { useContext } from 'react';
 import { UserContext } from '../UserContext';
-//get the signalling server because 2 peers are not able to sajre
-let server_url = "http://localhost:3000";
 // connections = { "socketId123": pc1, "socketId456": pc2 }
 //it is a purely js object that stores socketid and its pc pc is the peer connection
 //pc is js object that contains local ip address,public ip which stun sends back
@@ -17,6 +15,8 @@ let allStreams = [];
 window.streams = allStreams;
 let streamsWithSocketId = {};
 let pendingIceCandidates = {};
+const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
+let server_url = `${API}`;
 export function leaveMeeting() {
   //removing peer connections
   for (const id in connections) {
@@ -60,7 +60,7 @@ function VideoMeeting(){
     }
     console.log(user.login);
     async function socketConnection(id){
-      let res = await fetch("http://localhost:3000/turn");
+      let res = await fetch(`${API}/turn`);
       let val = await res.json();
       //creating the rtc peer connection on the both sides
       //i)configuring the rtcpeerconncetion
@@ -86,7 +86,7 @@ function VideoMeeting(){
           if(remoteStream && !allStreams.some((stream)=>stream.id===remoteStream.id)){
             allStreams.push(remoteStream);
             streamsWithSocketId[id] = remoteStream;
-            window.dispatchEvent(new CustomEvent("stream_updated"))
+            window.dispatchEvent(new CustomEvent("stream_updated"));
           }
       }
       //listening on the ice servers
@@ -249,12 +249,17 @@ function VideoMeeting(){
         toast.error("Username is required!")
         return;
       }
-      if (create&&user.login) {
-        let display = async function(){
+      await getPermission();
+      if(!window.localStream){
+        toast.error("Access Denied!");
+        return;
+      }
+      if (create && localStorage.getItem("token")) {
+        let display = async function () {
           let token = localStorage.getItem("token");
           console.log("CREATE:", create);
           console.log("ROOM ID:", roomId.current);
-          let res = await fetch("http://localhost:3000/meeting", {
+          let res = await fetch(`${API}/meeting`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -270,17 +275,10 @@ function VideoMeeting(){
             toast.error(data.error || "Failed to save meeting");
             return;
           }
-        
-        }
+        };
         await display();
       }
-      await getPermission();
-      if(!window.localStream){
-        toast.error("Access Denied!");
-        return;
-      }
       toast.success("Connection Successfull!");
-
       await getMedia(create);
       create?navigate(`/room/${roomId.current}`):navigate(`/room/${room}`);
     }

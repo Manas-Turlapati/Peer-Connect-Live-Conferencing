@@ -3,6 +3,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 function Register() { 
   let [details,setDetails] = useState({
     regName:"",
@@ -31,7 +32,7 @@ function Register() {
         return;
     }
     try{
-        let res = await fetch("http://localhost:3000/auth/register",{
+        let res = await fetch(`${API}/auth/register`,{
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useContext} from "react";
 import { UserContext } from "../UserContext";
+const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
 function Login() {
   let [details,setDetails] = useState({
     loginName:"",
@@ -24,7 +25,7 @@ function Login() {
         return;
     }
     try{
-        let res = await fetch("http://localhost:3000/auth/login", {
+        let res = await fetch(`${API}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

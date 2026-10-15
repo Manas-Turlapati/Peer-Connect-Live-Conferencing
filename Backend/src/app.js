@@ -7,7 +7,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const app = express(); //to communicate
 app.use(express.json()); //transalator from client to server
-app.use(cors({ origin: "*" })); //to make the req acceptable cross origin resource sharing
+const frontend_url = process.env.FRONTEND_URL;
+app.use(cors({ origin: frontend_url||"http://localhost:5173",methods:["GET","POST"] })); //to make the req acceptable cross origin resource sharing
 const url = process.env.MONGODB_URI;
 const port = process.env.PORT;
 app.use(express.urlencoded({ limit: "4kb", extended: true }));
@@ -30,11 +31,16 @@ app.get("/getTurn",async(req,res)=>{
   res.json(val);
 })
 app.get("/turn",async(req,res)=>{
-  let turnObj = await fetch(
-    `https://teja-webrtc.metered.live/api/v1/turn/credentials?apiKey=${process.env.TURN_API}`,
-  );
-  let turnServers = await turnObj.json();
-  res.json({data:turnServers});
+  try{
+    let turnObj = await fetch(
+      `https://teja-webrtc.metered.live/api/v1/turn/credentials?apiKey=${process.env.TURN_API}`,
+    );
+    let turnServers = await turnObj.json();
+    res.json({data:turnServers});
+  }
+  catch(err){
+    res.status(500).json({error:"Turn fetch failed"});
+  }
 })
 //creating a server and connecting it with app
 const http = require("http");
@@ -43,7 +49,7 @@ const server = http.createServer(app);
 const socketio = require("socket.io");
 const io = socketio(server, {
   cors: {
-    origin: "*", // or your frontend URL like "http://localhost:3000"
+    origin: frontend_url||"http://localhost:5173", // or your frontend URL like "http://localhost:3000"
     methods: ["GET", "POST"],
     allowedHeaders:["*"],
     credentials:true
@@ -59,6 +65,7 @@ mongoose
     });
   })
   .catch((err) => {
+    console.log(url);
     console.log(err);
   });
 //connection created between the server and client
