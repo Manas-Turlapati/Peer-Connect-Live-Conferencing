@@ -102,7 +102,7 @@ function VideoMeeting(){
 
     function connectToSocketServer(create){
       socketRef.current = io(server_url);
-      
+
       socketRef.current.on("connect", () => {
         window.socket = socketRef.current;
         let path = create?roomId.current:room;
@@ -143,7 +143,6 @@ function VideoMeeting(){
               } 
               delete pendingIceCandidates[fromUserId];
             }
-
             if(signalData.sdp.type === "offer") {
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
@@ -181,7 +180,7 @@ function VideoMeeting(){
             console.log(err); 
           }
         });
-        socketRef.current.emit("chat-message","Hi!Everyone I am Manas",askForUsername?username:"");
+        socketRef.current.emit(`chat-message","Hi!Everyone I am ${username}`,askForUsername?username:"");
         socketRef.current.on("user-left",async(disconnectedUserId)=>{
           try{
             let disconnectedStream = streamsWithSocketId[disconnectedUserId];

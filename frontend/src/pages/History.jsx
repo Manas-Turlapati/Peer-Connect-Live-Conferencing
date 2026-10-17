@@ -18,7 +18,10 @@ function History() {
           }
         });
         let historyData = await res.json();
-        console.log(historyData.data);
+        if(!res.ok){
+          toast.error(historyData.msg || historyData.error || "Please login again");
+          return;
+        }
         setData(historyData.data);
     }
     display();

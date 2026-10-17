@@ -22,7 +22,7 @@ app.get("/getTurn",async(req,res)=>{
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        expiryInSeconds: 3600,
+        expiryInSeconds: 86400,
         label: "exampleLabel",
       }),
     },
@@ -64,8 +64,7 @@ mongoose
       console.log(`Server listening on port ${port}`);
     });
   })
-  .catch((err) => {
-    console.log(url);
+  .catch((err) => { 
     console.log(err);
   });
 //connection created between the server and client
