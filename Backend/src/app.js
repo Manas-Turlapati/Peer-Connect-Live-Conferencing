@@ -22,7 +22,7 @@ app.get("/getTurn",async(req,res)=>{
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        expiryInSeconds: 86400,
+        expiryInSeconds: 3600,
         label: "exampleLabel",
       }),
     },
@@ -83,8 +83,10 @@ let messages = {};
 let time = {};
 io.on("connection", (socket) => {
     console.log(`${socket.id} is connected with the backend successfully`);
-    socket.on("join-call",(path)=>{
+    let sender;
+    socket.on("join-call",(path,username)=>{
       //these all below things happens when the user joins the call
+      sender = username;
       if (connections[path] === undefined) {
         connections[path] = [];
       }
@@ -115,7 +117,7 @@ io.on("connection", (socket) => {
             "chat-message",
             el["data"],
             el["sender"],
-            el["socket-id-of-sender"],
+            el["socketIdSender"],
           );
         });
       }
@@ -123,6 +125,7 @@ io.on("connection", (socket) => {
     
     socket.on("chat-message",(data,sender)=>{
       //to find the roomid using socket id
+       
       Object.entries(connections).forEach(([roomKey,roomValue])=>{
         //roomKey~room1 : roomValue~[client1,client2,client3]
 
@@ -131,14 +134,17 @@ io.on("connection", (socket) => {
             messages[roomKey] = [];
           }
           messages[roomKey].push({
-            sender: sender,
             data: data,
-            "socket-id-of-sender": socket.id,
+            sender: sender,
+            socketIdSender: socket.id,
           });
           //sending the message to all the users
           connections[roomKey].forEach(el=>{
-            io.to(el).emit("chat-message",data,sender,socket.id);
+            io.to(el).emit("chat-message",data,sender,socket.id,roomKey);
           })
+          // messages[roomKey].forEach(el=>{
+          //   console.log(`data:${el.data},sender:${el.sender},socketId:${socket.id}`);
+          // });
           return;
         }
       })
@@ -163,10 +169,22 @@ io.on("connection", (socket) => {
       connections[key].forEach((el) => {
         io.to(el).emit("user-left", socket.id);
       });
+      connections[key].forEach((el) => {
+        if(el!==socket.id){
+          io.to(el).emit(
+            "chat-message",
+            `${sender} has left the meeting`,
+            sender,
+            socket.id,
+            key,
+          );
+        }
+      });
       connections[key] = connections[key].filter((el) => el !== socket.id);
       if(connections[key].length===0){
         delete connections[key];
       }
+      
     })
 
     //if a's browser wants to send to b's browser 

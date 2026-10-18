@@ -11,6 +11,7 @@ import { UserContext } from '../UserContext';
 //it is a purely js object that stores socketid and its pc pc is the peer connection
 //pc is js object that contains local ip address,public ip which stun sends back
 let connections = {};
+let messages = {};
 let allStreams = [];
 window.streams = allStreams;
 let streamsWithSocketId = {};
@@ -58,7 +59,6 @@ function VideoMeeting(){
     let getMedia = async(create)=>{
       connectToSocketServer(create);
     }
-    console.log(user.login);
     async function socketConnection(id){
       let res = await fetch(`${API}/turn`);
       let val = await res.json();
@@ -102,12 +102,16 @@ function VideoMeeting(){
 
     function connectToSocketServer(create){
       socketRef.current = io(server_url);
-
+      window.socket = socketRef.current;
       socketRef.current.on("connect", () => {
-        window.socket = socketRef.current;
         let path = create?roomId.current:room;
-        socketRef.current.emit("join-call",path);
+        socketRef.current.emit("join-call",path,username);
         streamsWithSocketId[socketRef.current.id] = window.localStream;
+        socketRef.current.emit(
+          "chat-message",
+          `${username} joined the chat!`,
+          username ? username : "",
+        );
         socketRef.current.on("user-joined",async (remotePeerId) => {
           await socketConnection(remotePeerId);
           //making the sdp session descrption protocol negotiation which means sending an offer and receiving the answer
@@ -121,6 +125,7 @@ function VideoMeeting(){
             remotePeerId,
             JSON.stringify({ sdp: connections[remotePeerId].localDescription }),
           );
+          
 
         });
        
@@ -180,7 +185,6 @@ function VideoMeeting(){
             console.log(err); 
           }
         });
-        socketRef.current.emit(`chat-message","Hi!Everyone I am ${username}`,askForUsername?username:"");
         socketRef.current.on("user-left",async(disconnectedUserId)=>{
           try{
             let disconnectedStream = streamsWithSocketId[disconnectedUserId];
@@ -279,6 +283,7 @@ function VideoMeeting(){
       }
       toast.success("Connection Successfull!");
       await getMedia(create);
+      window.username = username;
       create?navigate(`/room/${roomId.current}`):navigate(`/room/${room}`);
     }
     return (
