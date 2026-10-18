@@ -24,7 +24,8 @@ Real-time video conferencing in the browser, built on WebRTC with a Socket.io si
 | NAT traversal | STUN + TURN (ICE) |
 
 ## Flow Diagram
-![Uploading Complete WebRTC Flow Infographic.png…]()
+<img width="1536" height="1024" alt="Complete WebRTC Flow Infographic" src="https://github.com/user-attachments/assets/00f91b95-1d0a-4d57-a6f4-55bf9d6335f8" />
+
 
 
 ## How It Works
