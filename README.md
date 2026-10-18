@@ -23,6 +23,10 @@ Real-time video conferencing in the browser, built on WebRTC with a Socket.io si
 | Media | WebRTC (`RTCPeerConnection`, `getUserMedia`) |
 | NAT traversal | STUN + TURN (ICE) |
 
+## Flow Diagram
+![Uploading Complete WebRTC Flow Infographic.png…]()
+
+
 ## How It Works
 
 1. A user joins a room, and the browser requests camera and mic access via `getUserMedia`.
