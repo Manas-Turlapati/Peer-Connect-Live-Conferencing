@@ -26,6 +26,8 @@ Real-time video conferencing in the browser, built on WebRTC with a Socket.io si
 ## Flow Diagram
 <img width="1536" height="1024" alt="Complete WebRTC Flow Infographic" src="https://github.com/user-attachments/assets/00f91b95-1d0a-4d57-a6f4-55bf9d6335f8" />
 
+## Architecture Diagram
+<img width="2720" height="3880" alt="peerconnect_webrtc_connection_flow" src="https://github.com/user-attachments/assets/0901ea41-a6d7-49d7-971e-4edc2a3acb02" />
 
 
 ## How It Works
