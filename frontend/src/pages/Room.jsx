@@ -1,6 +1,6 @@
 import {useEffect,useState} from "react";
 import { leaveMeeting } from "./VideoMeeting";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useParams } from "react-router-dom";
 import './Room.css';
 function Room(){ 
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ function Room(){
   let [chatToggle,setchatToggle] = useState(false); 
   let [chatMessages,setChatMessages] = useState([]);
   let [input,setInput] = useState("");
+  const {id} = useParams();
   useEffect(()=>{
     const update = () => setStreams([...window.streams]);
     window.addEventListener("stream_updated", update);
@@ -110,6 +111,7 @@ function Room(){
           >
             Leave the Meeting
           </button>
+          <p>Room ID: {useParams().id}</p>
           <button
             onClick={() => {
               setchatToggle(!chatToggle);
@@ -121,7 +123,7 @@ function Room(){
             <div className="chat-container">
               <div className="chat-header">
                 <h3>Chat</h3>
-                <button onClick={() => setChatToggle(false)}>✕</button>
+                <button onClick={() => setchatToggle(false)}>✕</button>
               </div>
               <div className="chat-messages">
                 {chatMessages.map((msg, index) => (

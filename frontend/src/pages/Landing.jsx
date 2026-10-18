@@ -33,7 +33,7 @@ function Landing(){
           </div>
           <div className="landing-image">
             <img
-              src="/public/mobile.png"
+              src="/mobile.png"
               alt="image"   
             />
           </div>

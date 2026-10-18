@@ -31,7 +31,7 @@ function History() {
       <h1>History of meetings</h1>
       <ul>
         {data.map((el) => (
-          <li key={el._id}>{el._id}</li>
+          <li key={el._id}>{el._id} — {new Date(el.date).toLocaleString()}</li>
         ))}
       </ul>
     </>
