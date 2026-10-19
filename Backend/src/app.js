@@ -22,7 +22,7 @@ app.get("/getTurn",async(req,res)=>{
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        expiryInSeconds: 3600,
+        expiryInSeconds: 86400,
         label: "exampleLabel",
       }),
     },
