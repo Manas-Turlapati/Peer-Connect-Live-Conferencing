@@ -287,7 +287,8 @@ function VideoMeeting(){
       create?navigate(`/room/${roomId.current}`):navigate(`/room/${room}`);
     }
     return (
-      <div>
+      <div className="meeting-lobby">
+        <section className="lobby-card">
         <h1>Enter the lobby</h1>
         <br />
         <TextField
@@ -352,15 +353,16 @@ function VideoMeeting(){
             </Button>
           </>
         )}
-        <div>
+        <div className="lobby-preview">
           <video
             ref={localVideoRef}
             autoPlay
             muted
             playsInline
-            style={{ width: 300 }}
+            style={{ width: "100%" }}
           />
         </div>
+        </section>
       </div>
     );
 }

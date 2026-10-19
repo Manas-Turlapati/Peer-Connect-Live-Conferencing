@@ -78,3 +78,16 @@
     color: orange;
     text-decoration: underline;
   }
+
+  .loginPageWrapper { width: 100%; min-height: 100vh; height: auto; padding: 24px 16px; background-image: linear-gradient(120deg, rgba(12,22,38,.45), rgba(12,22,38,.18)), url("/pexels-steve-29101877.jpg"); background-color: #eaf0f6; }
+  .loginCard { width: min(100%, 440px); max-width: none; border: 1px solid #dce3ec; background: rgba(255,255,255,.96); box-shadow: 0 18px 50px rgba(14,30,52,.2); }
+  .loginTitle { color: #1d2939; }
+  .loginLabel { color: #344256; }
+  .loginInput { border: 1px solid #cbd5e1; color: #202b3b; background: #fff; }
+  .loginFieldsWrapper p { line-height: 1.6; color: #475569; }
+  .loginSubmitBtn { margin: 0; }
+  @media (max-width: 480px) {
+    .loginCard { padding: 26px 20px; }
+    .loginTitle { font-size: 1.4rem; }
+    .loginSubmitBtn { width: 100%; }
+  }

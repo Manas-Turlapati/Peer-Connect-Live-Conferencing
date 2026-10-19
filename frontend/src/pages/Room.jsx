@@ -82,7 +82,8 @@ function Room(){
   }
   
     return (
-      <div>
+      <div className="meeting-room">
+        <div className="meeting-video-grid">
         {streams.map((stream, index) => (
           <video
             key={stream.id}
@@ -96,7 +97,8 @@ function Room(){
             }}
           />
         ))}
-        <div>
+        </div>
+        <div className="meeting-toolbar">
           <button onClick={toggleMic} disabled={!audioTrack}>
             {micOn ? "Mute" : "Unmute"}
           </button>
@@ -104,6 +106,7 @@ function Room(){
             {cameraOn ? "Camera Off" : "Camera On"}
           </button>
           <button
+            className="leave-button"
             onClick={() => {
               leaveMeeting();
               navigate("/dummy");
@@ -111,7 +114,7 @@ function Room(){
           >
             Leave the Meeting
           </button>
-          <p>Room ID: {useParams().id}</p>
+          <p className="room-id">Room ID: {useParams().id}</p>
           <button
             onClick={() => {
               setchatToggle(!chatToggle);
@@ -130,7 +133,7 @@ function Room(){
                   <div key={index} className="chat-message">
                     <strong>{msg.sender}</strong>
                     <i>
-                      <p style={{ color: "black" }}>{msg.data}</p>
+                      <p className="chat-text">{msg.data}</p>
                     </i>
                   </div>
                 ))}
