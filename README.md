@@ -2,7 +2,7 @@
 
 Real-time video conferencing in the browser, built on WebRTC with a Socket.io signaling server.
 
-🔗 **Live demo:** : https://peer-connect-live-conferencing.vercel.app/
+🔗 **Live demo:**  https://peer-connect-live-conferencing.vercel.app/
 
 ## Features
 
