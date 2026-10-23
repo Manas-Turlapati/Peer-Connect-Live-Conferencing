@@ -1,0 +1,10 @@
+[build]
+  base = "frontend"
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+# Single-page app: send every route to index.html so React Router can handle it
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
