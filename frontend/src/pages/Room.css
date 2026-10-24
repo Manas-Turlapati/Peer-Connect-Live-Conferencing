@@ -1,14 +1,612 @@
-.chat-container { position: fixed; right: 20px; bottom: 20px; width: min(350px, calc(100vw - 40px)); height: min(480px, calc(100vh - 40px)); display: flex; flex-direction: column; background: #fff; border: 1px solid #dce3ec; border-radius: 16px; box-shadow: 0 18px 55px rgba(31,48,73,.2); overflow: hidden; z-index: 1000; color: #202b3b; }
-.chat-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #26354a; color: white; }
-.chat-header h3 { margin: 0; font-size: 17px; }
-.chat-header button { margin: 0; padding: 0 4px; background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; }
-.chat-messages { flex: 1; padding: 16px; overflow-y: auto; background: #f7f9fc; }
-.chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid #dce3ec; background: #fff; }
-.chat-input input { flex: 1; min-width: 0; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; font-size: 14px; background: #fff; color: #202b3b; }
-.chat-input input:focus { border-color: #e47f37; }
-.chat-input button { margin: 0; padding: 10px 14px; background: #f69b55; color: #21140d; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; }
-.chat-input button:hover { background: #ffb477; }
-.chat-message { padding: 9px 11px; margin-bottom: 10px; border-radius: 10px; background: #eaf0f6; overflow-wrap: anywhere; }
-.chat-message strong { color: #b95e24; }
-.chat-text { margin: 5px 0 0; color: #344256; }
-@media (max-width: 520px) { .chat-container { right: 12px; bottom: 12px; width: calc(100vw - 24px); height: min(70vh, 480px); } }
+/* ==========================================================================
+   Liquid Glass Conference Room (Room.jsx)
+   Inspired by Reference Island UI & Glass Token System
+   ========================================================================== */
+
+.glass-room-layout {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--space);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Floating 2D Reactions Overlay */
+.glass-reactions-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 80;
+}
+
+.glass-floating-reaction {
+  position: absolute;
+  bottom: 84px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-lg);
+  color: #ffffff;
+  font-size: 1.3rem;
+  will-change: transform, opacity;
+  animation: floatGlassReaction 2.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.floating-reaction-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--sky);
+}
+
+@keyframes floatGlassReaction {
+  0% {
+    transform: translate3d(0, 20px, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+    opacity: 1;
+  }
+  25% {
+    transform: translate3d(0, -15px, 0) scale(1);
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(0, -220px, 0) scale(0.85);
+    opacity: 0;
+  }
+}
+
+/* Top Glass Header */
+.glass-room-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.room-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.room-brand-gem {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(158, 203, 255, 0.4) 0%, rgba(138, 255, 193, 0.2) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+
+.room-code-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-radius: var(--r-pill);
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.room-code-highlight {
+  font-weight: 700;
+  color: var(--sky);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-copy-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(158, 203, 255, 0.15);
+  color: var(--sky);
+  border: 1px solid rgba(158, 203, 255, 0.3);
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.room-copy-action:hover {
+  background: rgba(158, 203, 255, 0.25);
+}
+
+.room-people-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  padding: 5px 14px;
+  border-radius: var(--r-pill);
+}
+
+/* Video Stage */
+.glass-room-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 18px 88px;
+  overflow: hidden;
+  position: relative;
+}
+
+.video-grid {
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+  place-content: center;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-1 {
+  grid-template-columns: 1fr;
+  max-width: 980px;
+  height: 100%;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+  height: 100%;
+}
+
+.grid-n {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+
+.glass-video-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  max-height: calc(100vh - 180px);
+  aspect-ratio: 16/9;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  border: 1px solid var(--glass-edge);
+  background: #020203;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-video-card video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.glass-video-card.is-self video {
+  transform: scaleX(-1);
+}
+
+.glass-video-card.is-speaking {
+  border-color: rgba(138, 255, 193, 0.8);
+  box-shadow: 0 0 20px rgba(138, 255, 193, 0.35);
+}
+
+/* Camera Off Placeholder */
+.camera-off-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(15, 18, 28, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-avatar-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(158, 203, 255, 0.35) 0%, rgba(138, 255, 193, 0.2) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.avatar-caption {
+  font-size: 0.84rem;
+  color: var(--ink-dim);
+}
+
+/* Participant Pill Overlay */
+.participant-overlay-pill {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.participant-mic-status {
+  display: flex;
+  align-items: center;
+}
+.participant-mic-status.is-muted {
+  color: var(--accent-red);
+}
+.participant-mic-status.is-active {
+  color: var(--leaf);
+}
+
+/* Floating Glass Control Dock */
+.glass-controls-dock {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+}
+
+.dock-control-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--glass-facet);
+  border: 1px solid var(--glass-edge);
+  color: var(--ink);
+  transition: transform 0.12s, background-color 0.15s, border-color 0.15s;
+}
+
+.dock-control-btn:active {
+  transform: scale(0.92);
+}
+
+@media (hover: hover) {
+  .dock-control-btn:hover {
+    background: var(--glass-facet-hi);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+.dock-control-btn.is-muted {
+  background: var(--accent-red-soft);
+  border-color: rgba(255, 107, 129, 0.4);
+  color: var(--accent-red);
+}
+
+.dock-control-btn.is-active {
+  background: rgba(158, 203, 255, 0.2);
+  border-color: rgba(158, 203, 255, 0.45);
+  color: var(--sky);
+}
+
+.dock-control-btn.is-leave {
+  background: linear-gradient(145deg, rgba(255, 107, 129, 0.35) 0%, rgba(255, 107, 129, 0.12) 100%);
+  border-color: rgba(255, 107, 129, 0.5);
+  color: #ffffff;
+  width: auto;
+  padding: 0 18px;
+  gap: 6px;
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+@media (hover: hover) {
+  .dock-control-btn.is-leave:hover {
+    background: linear-gradient(145deg, rgba(255, 107, 129, 0.5) 0%, rgba(255, 107, 129, 0.2) 100%);
+  }
+}
+
+.dock-unread-counter {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: var(--sky);
+  color: #020203;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: var(--r-pill);
+}
+
+/* Quick Reaction Floating Bar */
+.glass-reaction-popover {
+  position: absolute;
+  bottom: 58px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  animation: popoverFadeIn 0.15s ease-out;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.reaction-emoji-btn {
+  font-size: 1.35rem;
+  padding: 4px 6px;
+  border-radius: 50%;
+  transition: transform 0.12s ease;
+}
+
+.reaction-emoji-btn:hover {
+  transform: scale(1.25);
+}
+
+/* Slide-out Chat Drawer */
+.glass-chat-drawer {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  bottom: 14px;
+  width: min(360px, calc(100vw - 28px));
+  z-index: 100;
+  border-radius: var(--r-2xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideDrawer 0.2s var(--ease-natural);
+}
+
+@keyframes slideDrawer {
+  from {
+    transform: translate3d(20px, 0, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.chat-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--glass-edge);
+}
+
+.chat-top-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.chat-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-dim);
+  background: transparent;
+  transition: all 0.15s;
+}
+
+.chat-close-btn:hover {
+  background: var(--glass-facet-hi);
+  color: var(--ink);
+}
+
+.chat-messages-scroll {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overscroll-behavior: contain;
+}
+
+.chat-empty-hint {
+  margin: auto;
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: 0.88rem;
+}
+
+.glass-chat-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 85%;
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.glass-chat-bubble.is-outgoing {
+  align-self: flex-end;
+  background: linear-gradient(145deg, rgba(158, 203, 255, 0.28) 0%, rgba(158, 203, 255, 0.1) 100%);
+  border: 1px solid rgba(158, 203, 255, 0.35);
+  color: var(--ink);
+  border-bottom-right-radius: 2px;
+}
+
+.glass-chat-bubble.is-incoming {
+  align-self: flex-start;
+  background: rgba(10, 12, 18, 0.55);
+  border: 1px solid var(--glass-edge);
+  color: var(--ink);
+  border-bottom-left-radius: 2px;
+}
+
+.bubble-sender-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sky);
+}
+
+.bubble-message-text {
+  margin: 0;
+}
+
+.chat-input-row {
+  padding: 12px 14px;
+  border-top: 1px solid var(--glass-edge);
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input-text {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  background: rgba(10, 12, 18, 0.55);
+  border: 1px solid var(--glass-edge);
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.chat-input-text:focus {
+  border-color: var(--sky);
+}
+
+.chat-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  background: rgba(158, 203, 255, 0.2);
+  border: 1px solid rgba(158, 203, 255, 0.35);
+  color: var(--sky);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.chat-send-btn:hover {
+  background: rgba(158, 203, 255, 0.35);
+}
+
+@media (max-width: 720px) {
+  .glass-room-header {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .room-brand-gem {
+    display: none;
+  }
+  .room-code-pill {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    max-width: calc(100vw - 110px);
+  }
+  .room-code-highlight {
+    max-width: 100px;
+  }
+  .room-people-pill {
+    padding: 4px 10px;
+    font-size: 0.76rem;
+    flex-shrink: 0;
+  }
+  .glass-room-stage {
+    padding: 8px 8px 80px;
+  }
+  .video-grid {
+    gap: 8px;
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .glass-video-card {
+    border-radius: var(--r-md);
+    min-height: 180px;
+  }
+  .participant-overlay-pill {
+    bottom: 6px;
+    left: 6px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+  }
+  .glass-controls-dock {
+    bottom: max(12px, env(safe-area-inset-bottom));
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .dock-control-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .dock-control-btn.is-leave {
+    padding: 0 12px;
+  }
+  .dock-control-btn.is-leave span {
+    display: none;
+  }
+  .glass-chat-drawer {
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+}
