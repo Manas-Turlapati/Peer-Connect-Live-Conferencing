@@ -25,6 +25,7 @@ dist-ssr
 # Block any .env file anywhere in this directory tree
 .env
 .env.*
+!.env.example
 # Block any node_modules folder anywhere in this directory tree
 node_modules/
 **/node_modules/

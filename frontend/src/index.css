@@ -1,5 +1,167 @@
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  /* Exact Liquid Glass Design Tokens from Reference */
+  --ink: #eaf0ff;
+  --ink-dim: #93a0c4;
+  --gold: #ffd98a;
+  --leaf: #8affc1;
+  --sky: #9ecbff;
+  --glass-fill: rgba(24, 25, 29, 0.40);
+  --glass-blur: 20px;
+  --glass-edge: rgba(255, 255, 255, 0.16);
+  --glass-hi: rgba(255, 255, 255, 0.70);
+  --glass-hi-soft: rgba(255, 255, 255, 0.07);
+  --glass-sheen: linear-gradient(152deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.018) 38%, rgba(0, 0, 0, 0) 60%);
+  --glass-facet: rgba(255, 255, 255, 0.05);
+  --glass-facet-hi: rgba(255, 255, 255, 0.18);
+  --r-pill: 9999px;
+  --r-2xl: 32px;
+  --r-xl: 26px;
+  --r-lg: 20px;
+  --r-md: 14px;
+  --r-sm: 10px;
+  --r-xs: 6px;
+  --space: #020203;
+  --space-scrim: rgba(2, 2, 3, 0.75);
+
+  /* Typography */
+  --font-sans: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Space Grotesk', var(--font-sans);
+
+  /* Functional Accents (Zero Orange) */
+  --accent-primary: var(--sky);
+  --accent-primary-hover: #bde0ff;
+  --accent-primary-glow: rgba(158, 203, 255, 0.3);
+
+  --accent-green: var(--leaf);
+  --accent-green-soft: rgba(138, 255, 193, 0.14);
+
+  --accent-red: #ff6b81;
+  --accent-red-hover: #ff4762;
+  --accent-red-soft: rgba(255, 107, 129, 0.16);
+
+  /* Easings */
+  --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-natural: cubic-bezier(0.2, 0, 0, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  font-size: 16px;
+  background-color: var(--space);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--space);
+  color: var(--ink);
+  overflow-x: hidden;
+  position: relative;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   AUTHENTIC LIQUID GLASS ARCHITECTURE (From Reference DevTools)
+   ========================================================================== */
+.glass {
+  position: relative;
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-edge);
+  background-image: var(--glass-sheen);
+  box-shadow: 
+    0 20px 48px -12px rgba(0, 0, 0, 0.7),
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 20px rgba(255, 255, 255, 0.02);
+}
+
+.glass::before, .facet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.12) 35%, rgba(255, 255, 255, 0.04) 65%, rgba(255, 255, 255, 0.16) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* Base Form Elements */
+input, button, textarea, select {
+  font-family: inherit;
+  color: inherit;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+button {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Custom Glass Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--r-lg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Tactile Spring Press */
+.tactile-btn {
+  transition: transform 0.12s var(--ease-snappy), background-color 0.15s, border-color 0.15s;
+  will-change: transform;
+}
+.tactile-btn:active:not(:disabled) {
+  transform: scale(0.96) !important;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
